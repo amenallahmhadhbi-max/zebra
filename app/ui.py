@@ -1,13 +1,15 @@
 import tkinter as tk
+from PIL import ImageTk
 from serial_number import generate_serial_number
 from label_template import build_zpl_label
 from printer import send_to_printer
+from datamatrix_preview import generate_datamatrix_image
 
 
 def main():
     root = tk.Tk()
     root.title("Zebra Label Printer - Visteon")
-    root.geometry("600x400")
+    root.geometry("700x450")
 
     # --- Zone du haut : PN et Quantité ---
     top_frame = tk.Frame(root)
@@ -25,15 +27,29 @@ def main():
     qty_entry = tk.Entry(top_frame, width=20)
     qty_entry.grid(row=1, column=1, padx=5, pady=5)
 
-    # --- Zone du bas : liste des SN ---
+    # --- Zone du bas : Data Matrix (gauche) + Liste des SN (droite) ---
     bottom_frame = tk.Frame(root)
     bottom_frame.pack(pady=10, fill="both", expand=True)
 
-    sn_label = tk.Label(bottom_frame, text="Numéros de série imprimés :")
-    sn_label.pack(anchor="w", padx=10)
+    # Sous-zone gauche : aperçu Data Matrix
+    left_frame = tk.Frame(bottom_frame)
+    left_frame.pack(side="left", padx=10, fill="both", expand=True)
 
-    sn_listbox = tk.Listbox(bottom_frame, width=40, height=10)
-    sn_listbox.pack(padx=10, pady=5, fill="both", expand=True)
+    datamatrix_title = tk.Label(left_frame, text="Aperçu Data Matrix :")
+    datamatrix_title.pack(anchor="w")
+
+    datamatrix_display = tk.Label(left_frame)
+    datamatrix_display.pack(pady=5)
+
+    # Sous-zone droite : liste des SN
+    right_frame = tk.Frame(bottom_frame)
+    right_frame.pack(side="left", padx=10, fill="both", expand=True)
+
+    sn_label = tk.Label(right_frame, text="Numéros de série imprimés :")
+    sn_label.pack(anchor="w")
+
+    sn_listbox = tk.Listbox(right_frame, width=40, height=10)
+    sn_listbox.pack(pady=5, fill="both", expand=True)
 
     # --- Fonction appelée au clic du bouton ---
     def on_print_click():
@@ -57,6 +73,15 @@ def main():
 
             if success:
                 sn_listbox.insert(tk.END, sn)
+
+                # Génère et affiche l'aperçu Data Matrix du dernier SN imprimé
+                pil_image = generate_datamatrix_image(sn)
+                pil_image = pil_image.resize((150, 150))
+                tk_image = ImageTk.PhotoImage(pil_image)
+
+                datamatrix_display.configure(image=tk_image)
+                datamatrix_display.image = tk_image  # référence gardée !
+
                 print(f"Étiquette {i + 1}/{qty} imprimée. SN: {sn}")
             else:
                 print(f"Échec de l'impression de l'étiquette {i + 1}/{qty}.")
