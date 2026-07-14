@@ -1,0 +1,10 @@
+^XA
+^PW79
+^LL119
+^FO5,5
+^A0N,18,18
+^FD{PN}^FS
+^FO10,30
+^BXN,2,200
+^FD{SN}^FS
+^XZ

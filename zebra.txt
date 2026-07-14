@@ -45,6 +45,13 @@ send_to_printer
     Retourne True si l'envoi (simulé) a réussi, False sinon.
     """
 
+datamatrix_preview : transforme un texte (le SN) en image 
+
+encode (de la bibliothèque pylibdmtx) : sait transformer du texte en Data Matrix
+Image (de la bibliothèque Pillow) : sait manipuler des images en Python
+
+
+
 
 
 
