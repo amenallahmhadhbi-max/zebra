@@ -1,0 +1,52 @@
+Template :
+
+les dimensions : largeur hauteur
+
+                 nombre de pouces pour data matrix largeur/hauteur * dpi
+
+fonction qui genere le code :
+language ZPL
+
+Commands start with a caret (^) 
+Command names follow the caret are one or two letters long, and are case-insensitive
+Commands can have a number of parameters
+ommand parameters are separated by comma (,) characters
+Whitespace (spaces, tabs, newlines) is mostly ignored; the main exception is the ^FD
+^XA and ^XZ, serve as bookends to ZPL label definitions.
+The ^FS command is used to finish the current field and start a new field.
+
+
+
+formatted string
+
+
+
+
+
+printer.py
+
+envoyer du ZPL brut à une imprimante Zebra
+
+2 manieres:
+API d'impression Windows : pywin32
+
+port série virtuel (COM) : pyserial
+
+send_to_printer
+
+ """
+    Envoie le code ZPL à l'imprimante Zebra.
+    
+    MODE SIMULATION : pour l'instant, pas d'imprimante physique connectée,
+    donc on affiche simplement ce qui serait envoyé.
+    À remplacer plus tard par le vrai envoi (win32print ou pyserial),
+    une fois l'adaptateur USB reçu.
+    
+    Retourne True si l'envoi (simulé) a réussi, False sinon.
+    """
+
+
+
+
+
+

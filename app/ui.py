@@ -11,7 +11,7 @@ def main():
     root.title("Zebra Label Printer - Visteon")
     root.geometry("700x450")
 
-    # --- Zone du haut : PN et Quantité ---
+    # Zone du haut
     top_frame = tk.Frame(root)
     top_frame.pack(pady=10)
 
@@ -27,11 +27,11 @@ def main():
     qty_entry = tk.Entry(top_frame, width=20)
     qty_entry.grid(row=1, column=1, padx=5, pady=5)
 
-    # --- Zone du bas : Data Matrix (gauche) + Liste des SN (droite) ---
+    # Zone du bas 
     bottom_frame = tk.Frame(root)
     bottom_frame.pack(pady=10, fill="both", expand=True)
 
-    # Sous-zone gauche : aperçu Data Matrix
+    # Sous-zone gauche 
     left_frame = tk.Frame(bottom_frame)
     left_frame.pack(side="left", padx=10, fill="both", expand=True)
 
@@ -41,7 +41,7 @@ def main():
     datamatrix_display = tk.Label(left_frame)
     datamatrix_display.pack(pady=5)
 
-    # Sous-zone droite : liste des SN
+    # Sous-zone droite 
     right_frame = tk.Frame(bottom_frame)
     right_frame.pack(side="left", padx=10, fill="both", expand=True)
 
@@ -51,7 +51,7 @@ def main():
     sn_listbox = tk.Listbox(right_frame, width=40, height=10)
     sn_listbox.pack(pady=5, fill="both", expand=True)
 
-    # --- Fonction appelée au clic du bouton ---
+    # Fonction clic du bouton
     def on_print_click():
         pn = pn_entry.get()
         qty_text = qty_entry.get()
@@ -67,7 +67,7 @@ def main():
         qty = int(qty_text)
 
         for i in range(qty):
-            sn = generate_serial_number()
+            sn = generate_serial_number(pn)
             zpl_code = build_zpl_label(pn, sn)
             success = send_to_printer(zpl_code)
 
@@ -80,13 +80,13 @@ def main():
                 tk_image = ImageTk.PhotoImage(pil_image)
 
                 datamatrix_display.configure(image=tk_image)
-                datamatrix_display.image = tk_image  # référence gardée !
+                datamatrix_display.image = tk_image 
 
                 print(f"Étiquette {i + 1}/{qty} imprimée. SN: {sn}")
             else:
                 print(f"Échec de l'impression de l'étiquette {i + 1}/{qty}.")
 
-    # --- Bouton Imprimer ---
+    # Bouton Imprimer
     print_button = tk.Button(top_frame, text="Imprimer", command=on_print_click)
     print_button.grid(row=2, column=0, columnspan=2, pady=10)
 

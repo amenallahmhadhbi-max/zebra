@@ -1,16 +1,17 @@
-
 from datetime import datetime
 
 
-def generate_serial_number():
+def generate_serial_number(pn: str) -> str:
 
     now = datetime.now()
 
-    formatted_date = now.strftime('%d_%m_%Y_%H_%M_%S')
-    
-    return formatted_date
+    formatted_date = now.strftime('%d%m%Y%H%M%S')
+
+    serial_number = f"{pn}_{formatted_date}"
+
+    return serial_number
+
 
 if __name__ == "__main__":
-    print(generate_serial_number())
-
-    
+    test_pn = "PN12345"
+    print(generate_serial_number(test_pn))
