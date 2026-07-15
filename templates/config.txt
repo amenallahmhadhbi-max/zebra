@@ -1,0 +1,3 @@
+^FO10,30   → 10 dots du bord gauche, 30 dots du bord haut (proche du coin haut-gauche)
+^FO40,60   → plus vers le centre
+^FO0,0     → collé exactement dans le coin haut-gauche
