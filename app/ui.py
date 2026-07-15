@@ -1,4 +1,5 @@
 import tkinter as tk
+import threading
 from PIL import ImageTk
 from serial_number import generate_serial_number
 from label_template import build_zpl_label
@@ -11,7 +12,7 @@ def main():
     root.title("Zebra Label Printer - Visteon")
     root.geometry("700x450")
 
-    # Zone du haut
+    # --- Zone du haut : PN et Quantité ---
     top_frame = tk.Frame(root)
     top_frame.pack(pady=10)
 
@@ -27,11 +28,10 @@ def main():
     qty_entry = tk.Entry(top_frame, width=20)
     qty_entry.grid(row=1, column=1, padx=5, pady=5)
 
-    # Zone du bas 
+    # --- Zone du bas : Data Matrix (gauche) + Liste des SN (droite) ---
     bottom_frame = tk.Frame(root)
     bottom_frame.pack(pady=10, fill="both", expand=True)
 
-    # Sous-zone gauche 
     left_frame = tk.Frame(bottom_frame)
     left_frame.pack(side="left", padx=10, fill="both", expand=True)
 
@@ -41,7 +41,6 @@ def main():
     datamatrix_display = tk.Label(left_frame)
     datamatrix_display.pack(pady=5)
 
-    # Sous-zone droite 
     right_frame = tk.Frame(bottom_frame)
     right_frame.pack(side="left", padx=10, fill="both", expand=True)
 
@@ -51,7 +50,31 @@ def main():
     sn_listbox = tk.Listbox(right_frame, width=40, height=10)
     sn_listbox.pack(pady=5, fill="both", expand=True)
 
-    # Fonction clic du bouton
+    # --- Fonction qui met à jour l'interface (appelée UNIQUEMENT via root.after) ---
+    def update_ui_after_print(sn):
+        sn_listbox.insert(tk.END, sn)
+
+        pil_image = generate_datamatrix_image(sn)
+        pil_image = pil_image.resize((150, 150))
+        tk_image = ImageTk.PhotoImage(pil_image)
+
+        datamatrix_display.configure(image=tk_image)
+        datamatrix_display.image = tk_image
+
+    # --- La boucle d'impression, exécutée dans un thread séparé ---
+    def print_loop(pn, qty):
+        for i in range(qty):
+            sn = generate_serial_number(pn)
+            zpl_code = build_zpl_label(pn, sn)
+            success = send_to_printer(zpl_code)
+
+            if success:
+                root.after(0, update_ui_after_print, sn)
+                print(f"Étiquette {i + 1}/{qty} imprimée. SN: {sn}")
+            else:
+                print(f"Échec de l'impression de l'étiquette {i + 1}/{qty}.")
+
+    # --- Fonction appelée au clic du bouton ---
     def on_print_click():
         pn = pn_entry.get()
         qty_text = qty_entry.get()
@@ -66,27 +89,10 @@ def main():
 
         qty = int(qty_text)
 
-        for i in range(qty):
-            sn = generate_serial_number(pn)
-            zpl_code = build_zpl_label(pn, sn)
-            success = send_to_printer(zpl_code)
+        thread = threading.Thread(target=print_loop, args=(pn, qty))
+        thread.start()
 
-            if success:
-                sn_listbox.insert(tk.END, sn)
-
-                # Génère et affiche l'aperçu Data Matrix du dernier SN imprimé
-                pil_image = generate_datamatrix_image(sn)
-                pil_image = pil_image.resize((150, 150))
-                tk_image = ImageTk.PhotoImage(pil_image)
-
-                datamatrix_display.configure(image=tk_image)
-                datamatrix_display.image = tk_image 
-
-                print(f"Étiquette {i + 1}/{qty} imprimée. SN: {sn}")
-            else:
-                print(f"Échec de l'impression de l'étiquette {i + 1}/{qty}.")
-
-    # Bouton Imprimer
+    # --- Bouton Imprimer ---
     print_button = tk.Button(top_frame, text="Imprimer", command=on_print_click)
     print_button.grid(row=2, column=0, columnspan=2, pady=10)
 
