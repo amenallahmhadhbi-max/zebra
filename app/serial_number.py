@@ -5,7 +5,7 @@ def generate_serial_number(pn: str) -> str:
 
     now = datetime.now()
 
-    formatted_date = now.strftime('%d%m%Y%H%M%S')
+    formatted_date = now.strftime('%y%m%d%H%M%S')
 
     serial_number = f"{pn}_{formatted_date}"
 
