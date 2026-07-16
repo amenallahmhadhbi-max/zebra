@@ -3,7 +3,7 @@ import threading
 from PIL import ImageTk
 from serial_number import generate_serial_number
 from label_template import build_zpl_label
-from printer import send_to_printer
+from printer import send_to_printer, SERIAL_PORT, BAUD_RATE, DATA_BITS, PARITY, STOP_BITS, FLOW_CONTROL
 from datamatrix_preview import generate_datamatrix_image
 
 
@@ -28,19 +28,75 @@ def main():
     qty_entry = tk.Entry(top_frame, width=20)
     qty_entry.grid(row=1, column=1, padx=5, pady=5)
 
-    # --- Zone du bas : Data Matrix (gauche) + Liste des SN (droite) ---
+    # --- Zone du bas : Vue basculable (gauche) + Liste des SN (droite) ---
     bottom_frame = tk.Frame(root)
     bottom_frame.pack(pady=10, fill="both", expand=True)
 
     left_frame = tk.Frame(bottom_frame)
     left_frame.pack(side="left", padx=10, fill="both", expand=True)
 
-    datamatrix_title = tk.Label(left_frame, text="Aperçu Data Matrix :")
-    datamatrix_title.pack(anchor="w")
+    # --- Barre de navigation avec les deux flèches ---
+    nav_frame = tk.Frame(left_frame)
+    nav_frame.pack(fill="x")
 
-    datamatrix_display = tk.Label(left_frame)
+    view_title = tk.Label(nav_frame, text="Configuration Imprimante", font=("Arial", 10, "bold"))
+    view_title.pack(side="left", expand=True)
+
+    # --- Sous-zone : vue Configuration ---
+    config_frame = tk.Frame(left_frame)
+
+    config_lines = [
+        f"Port: {SERIAL_PORT}",
+        f"Baud rate: {BAUD_RATE}",
+        f"Data bits: {DATA_BITS}",
+        f"Parity: {PARITY}",
+        f"Stop bits: {STOP_BITS}",
+        f"Flow control: {FLOW_CONTROL}",
+    ]
+
+    for line in config_lines:
+        tk.Label(config_frame, text=line, anchor="w").pack(fill="x", padx=10, pady=2)
+
+    # --- Sous-zone : vue Data Matrix ---
+    datamatrix_frame = tk.Frame(left_frame)
+
+    datamatrix_display = tk.Label(datamatrix_frame)
     datamatrix_display.pack(pady=5)
 
+    # --- État courant de la vue affichée (0 = config, 1 = data matrix) ---
+    current_view = {"index": 0}
+
+    def show_view(index):
+        config_frame.pack_forget()
+        datamatrix_frame.pack_forget()
+
+        if index == 0:
+            config_frame.pack(fill="both", expand=True)
+            view_title.config(text="Configuration Imprimante")
+        else:
+            datamatrix_frame.pack(fill="both", expand=True)
+            view_title.config(text="Aperçu Data Matrix")
+
+        current_view["index"] = index
+
+    def show_previous():
+        new_index = (current_view["index"] - 1) % 2
+        show_view(new_index)
+
+    def show_next():
+        new_index = (current_view["index"] + 1) % 2
+        show_view(new_index)
+
+    prev_button = tk.Button(nav_frame, text="◀", command=show_previous)
+    prev_button.pack(side="left")
+
+    next_button = tk.Button(nav_frame, text="▶", command=show_next)
+    next_button.pack(side="right")
+
+    # Affiche la vue Config au démarrage
+    show_view(0)
+
+    # Sous-zone droite : liste des SN
     right_frame = tk.Frame(bottom_frame)
     right_frame.pack(side="left", padx=10, fill="both", expand=True)
 

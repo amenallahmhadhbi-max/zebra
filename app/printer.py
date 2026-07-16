@@ -1,19 +1,23 @@
 import serial
 import time
+import configparser
 
-# Configuration 
+# Chargement confi fichier .ini 
+config = configparser.ConfigParser()
+config.read("config/printer_config.ini")
+
+SERIAL_PORT = config["PrinterSettings"]["port"]
+BAUD_RATE = int(config["PrinterSettings"]["baud_rate"])
+DATA_BITS = int(config["PrinterSettings"]["data_bits"])
+PARITY = config["PrinterSettings"]["parity"]
+STOP_BITS = float(config["PrinterSettings"]["stop_bits"])
+FLOW_CONTROL = config["PrinterSettings"]["flow_control"]
+
 SIMULATION_MODE = True   # passe à False une fois l'imprimante branchée et testée
-
-SERIAL_PORT = "COM3"     # à ajuster une fois le vrai port connu (Gestionnaire de périphériques)
-BAUD_RATE = 9600         # à ajuster selon la doc de l'imprimante
 
 
 def send_to_printer(zpl_code: str) -> bool:
-    """
-    Envoie le code ZPL à l'imprimante.
-    Si SIMULATION_MODE est True, simule l'envoi (affichage console).
-    Si False, envoie réellement les données via le port série (RS-232).
-    """
+   
 
     if SIMULATION_MODE:
         return _send_simulated(zpl_code)
@@ -39,11 +43,18 @@ def _send_simulated(zpl_code: str) -> bool:
 
 def _send_real(zpl_code: str) -> bool:
     try:
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=2)
+        ser = serial.Serial(
+            port=SERIAL_PORT,
+            baudrate=BAUD_RATE,
+            bytesize=DATA_BITS,
+            parity=PARITY,
+            stopbits=STOP_BITS,
+            timeout=2
+        )
         ser.write(zpl_code.encode("utf-8"))
         ser.close()
 
-        print("Impression envoyée avec succès (mode réel).")
+        print("Impression envoyée avec succès.")
         return True
 
     except Exception as e:
