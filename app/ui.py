@@ -10,9 +10,9 @@ from datamatrix_preview import generate_datamatrix_image
 def main():
     root = tk.Tk()
     root.title("Zebra Label Printer - Visteon")
-    root.geometry("700x450")
+    root.geometry("700x480")
 
-    # --- Zone du haut : PN et Quantité ---
+    # --- Zone du haut : PN, SN de départ et Quantité ---
     top_frame = tk.Frame(root)
     top_frame.pack(pady=10)
 
@@ -22,11 +22,17 @@ def main():
     pn_entry = tk.Entry(top_frame, width=20)
     pn_entry.grid(row=0, column=1, padx=5, pady=5)
 
+    sn_start_label = tk.Label(top_frame, text="N° de série de départ:")
+    sn_start_label.grid(row=1, column=0, padx=5, pady=5, sticky="e")
+
+    sn_start_entry = tk.Entry(top_frame, width=20)
+    sn_start_entry.grid(row=1, column=1, padx=5, pady=5)
+
     qty_label = tk.Label(top_frame, text="Quantité:")
-    qty_label.grid(row=1, column=0, padx=5, pady=5, sticky="e")
+    qty_label.grid(row=2, column=0, padx=5, pady=5, sticky="e")
 
     qty_entry = tk.Entry(top_frame, width=20)
-    qty_entry.grid(row=1, column=1, padx=5, pady=5)
+    qty_entry.grid(row=2, column=1, padx=5, pady=5)
 
     # --- Zone du bas : Vue basculable (gauche) + Liste des SN (droite) ---
     bottom_frame = tk.Frame(root)
@@ -100,17 +106,17 @@ def main():
     right_frame = tk.Frame(bottom_frame)
     right_frame.pack(side="left", padx=10, fill="both", expand=True)
 
-    sn_label = tk.Label(right_frame, text="Numéros de série imprimés :")
+    sn_label = tk.Label(right_frame, text="Codes imprimés :")
     sn_label.pack(anchor="w")
 
     sn_listbox = tk.Listbox(right_frame, width=40, height=10)
     sn_listbox.pack(pady=5, fill="both", expand=True)
 
     # --- Fonction qui met à jour l'interface (appelée UNIQUEMENT via root.after) ---
-    def update_ui_after_print(sn):
-        sn_listbox.insert(tk.END, sn)
+    def update_ui_after_print(code):
+        sn_listbox.insert(tk.END, code)
 
-        pil_image = generate_datamatrix_image(sn)
+        pil_image = generate_datamatrix_image(code)
         pil_image = pil_image.resize((150, 150))
         tk_image = ImageTk.PhotoImage(pil_image)
 
@@ -118,39 +124,45 @@ def main():
         datamatrix_display.image = tk_image
 
     # --- La boucle d'impression, exécutée dans un thread séparé ---
-    def print_loop(pn, qty):
+    def print_loop(pn, sn_start, qty):
         for i in range(qty):
-            sn = generate_serial_number(pn)
-            zpl_code = build_zpl_label(pn, sn)
+            code = generate_serial_number(pn, sn_start, i)
+            zpl_code = build_zpl_label(pn, code)
             success = send_to_printer(zpl_code)
 
             if success:
-                root.after(0, update_ui_after_print, sn)
-                print(f"Étiquette {i + 1}/{qty} imprimée. SN: {sn}")
+                root.after(0, update_ui_after_print, code)
+                print(f"Étiquette {i + 1}/{qty} imprimée. Code: {code}")
             else:
                 print(f"Échec de l'impression de l'étiquette {i + 1}/{qty}.")
 
     # --- Fonction appelée au clic du bouton ---
     def on_print_click():
-        pn = pn_entry.get()
-        qty_text = qty_entry.get()
+        pn = pn_entry.get().strip()
+        sn_start_text = sn_start_entry.get().strip()
+        qty_text = qty_entry.get().strip()
 
         if not pn:
             print("Erreur : Product Number vide.")
+            return
+
+        if not sn_start_text.isdigit():
+            print("Erreur : le numéro de série de départ doit être un nombre entier.")
             return
 
         if not qty_text.isdigit():
             print("Erreur : la quantité doit être un nombre entier.")
             return
 
+        sn_start = int(sn_start_text)
         qty = int(qty_text)
 
-        thread = threading.Thread(target=print_loop, args=(pn, qty))
+        thread = threading.Thread(target=print_loop, args=(pn, sn_start, qty))
         thread.start()
 
     # --- Bouton Imprimer ---
     print_button = tk.Button(top_frame, text="Imprimer", command=on_print_click)
-    print_button.grid(row=2, column=0, columnspan=2, pady=10)
+    print_button.grid(row=3, column=0, columnspan=2, pady=10)
 
     root.mainloop()
 

@@ -1,9 +1,5 @@
 ^XA
 
-^PW79
-
-^LL119
-
-^FO10,30^BXN,2,200^FD{SN}^FS
-
+^FX---baree---^FS
+^BY0,1.0^FO70,40^BXN,4,200^FR^FD{SN}^FS
 ^XZ
