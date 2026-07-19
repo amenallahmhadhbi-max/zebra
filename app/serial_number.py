@@ -1,29 +1,35 @@
 from datetime import datetime
 
 
-def generate_serial_number(pn: str, sn_start: int, index: int) -> str:
+def generate_serial_number_sequential(pn: str, sn_start: int, index: int) -> str:
     """
-    Construit le contenu complet du Data Matrix :
+    Mode séquentiel :
     partnumber_serialnumber_date_1_02
-
-    - sn_start : numéro de série de départ saisi par l'utilisateur
-    - index    : position dans le lot d'impression (0, 1, 2, ...)
     """
     sn_value = sn_start + index
-    sn_formatted = f"{sn_value:06d}"  # zero-padding sur 6 chiffres, ajuste selon besoin
+    sn_formatted = f"{sn_value:06d}"
 
     now = datetime.now()
-    formatted_date = now.strftime('%y%m%d')  # ajuste le format selon ce qu'attend ton encadreur
+    formatted_date = now.strftime('%y%m%d')
 
     LIGNE = "1"
     STATION = "02"
 
-    full_code = f"{pn}_{sn_formatted}_{formatted_date}_{LIGNE}_{STATION}"
+    return f"{pn}_{sn_formatted}_{formatted_date}_{LIGNE}_{STATION}"
 
-    return full_code
+
+def generate_serial_number_datetime(pn: str) -> str:
+    """
+    Mode Date/Heure :
+    partnumber_AAMMJJHHMMSS
+    """
+    now = datetime.now()
+    formatted_date = now.strftime('%y%m%d%H%M%S')
+
+    return f"{pn}_{formatted_date}"
 
 
 if __name__ == "__main__":
     test_pn = "PN12345"
-    print(generate_serial_number(test_pn, sn_start=100, index=0))
-    print(generate_serial_number(test_pn, sn_start=100, index=1))
+    print(generate_serial_number_sequential(test_pn, sn_start=100, index=0))
+    print(generate_serial_number_datetime(test_pn))
