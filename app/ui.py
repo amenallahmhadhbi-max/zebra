@@ -1,17 +1,18 @@
 import tkinter as tk
+from tkinter import messagebox
 import threading
 from PIL import Image, ImageTk
 from serial_number import generate_serial_number_sequential, generate_serial_number_datetime
 from label_template import build_zpl_label
-from printer import send_to_printer, SERIAL_PORT, BAUD_RATE, DATA_BITS, PARITY, STOP_BITS, FLOW_CONTROL
+from printer import send_to_printer, get_printer_status, SERIAL_PORT, BAUD_RATE, DATA_BITS, PARITY, STOP_BITS, FLOW_CONTROL
 from datamatrix_preview import generate_datamatrix_image
 
 # --- Palette Visteon ---
 COLOR_ORANGE = "#F4901E"
 COLOR_DARK = "#313131"
+COLOR_MEDIUM_GRAY = "#5A5A5A"
 COLOR_WHITE = "#FFFFFF"
 COLOR_LIGHT_BG = "#F5F5F5"
-COLOR_MEDIUM_GRAY = "#5A5A5A"
 
 FONT_TITLE = ("Segoe UI", 16, "bold")
 FONT_LABEL = ("Segoe UI", 10)
@@ -183,9 +184,32 @@ def main():
         datamatrix_display.configure(image=tk_image)
         datamatrix_display.image = tk_image
 
+    def show_error(message):
+        messagebox.showerror("Erreur imprimante", message)
+        print_button.config(state="normal")
+
     # --- La boucle d'impression, exécutée dans un thread séparé ---
     def print_loop(mode, pn, sn_start, qty):
         for i in range(qty):
+            status = get_printer_status()
+
+            if status is None:
+                root.after(0, show_error, "Impossible de contacter l'imprimante.")
+                return
+
+            if status.get("paper_out"):
+                root.after(0, show_error, "Plus de papier dans l'imprimante !")
+                return
+            if status.get("ribbon_out"):
+                root.after(0, show_error, "Plus de ruban !")
+                return
+            if status.get("head_open"):
+                root.after(0, show_error, "La tête d'impression est ouverte !")
+                return
+            if status.get("paused"):
+                root.after(0, show_error, "L'imprimante est en pause.")
+                return
+
             if mode == "sequential":
                 code = generate_serial_number_sequential(pn, sn_start, i)
             else:
@@ -198,7 +222,10 @@ def main():
                 root.after(0, update_ui_after_print, code)
                 print(f"Étiquette {i + 1}/{qty} imprimée. Code: {code}")
             else:
-                print(f"Échec de l'impression de l'étiquette {i + 1}/{qty}.")
+                root.after(0, show_error, f"Échec de l'impression de l'étiquette {i + 1}/{qty}.")
+                return
+
+        root.after(0, lambda: print_button.config(state="normal"))
 
     # --- Fonction appelée au clic du bouton ---
     def on_print_click():
@@ -207,11 +234,11 @@ def main():
         qty_text = qty_entry.get().strip()
 
         if not pn:
-            print("Erreur : Product Number vide.")
+            messagebox.showerror("Erreur", "Product Number vide.")
             return
 
         if not qty_text.isdigit():
-            print("Erreur : la quantité doit être un nombre entier.")
+            messagebox.showerror("Erreur", "La quantité doit être un nombre entier.")
             return
 
         qty = int(qty_text)
@@ -220,10 +247,11 @@ def main():
         if mode == "sequential":
             sn_start_text = sn_start_entry.get().strip()
             if not sn_start_text.isdigit():
-                print("Erreur : le numéro de série de départ doit être un nombre entier.")
+                messagebox.showerror("Erreur", "Le numéro de série de départ doit être un nombre entier.")
                 return
             sn_start = int(sn_start_text)
 
+        print_button.config(state="disabled")
         thread = threading.Thread(target=print_loop, args=(mode, pn, sn_start, qty))
         thread.start()
 
