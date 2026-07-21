@@ -1,37 +1,44 @@
-# Zebra Label Printer - Visteon Tunisie
 
-Application de génération et d'impression d'étiquettes pour imprimante Zebra, développée dans le cadre d'un stage chez Visteon Tunisie.
+# Zebra Label Printer - Visteon Tunisia
 
-## Fonctionnalités
+Label generation and printing application for a Zebra printer, developed as part of an internship at Visteon Tunisia.
 
-- Génération de codes uniques encodés en Data Matrix sur chaque étiquette
-- Trois modes de génération de code :
-  - **Séquentiel** : `PN_NUMERO_DATE_LIGNE_STATION`, numéro de série incrémental
-  - **Date/Heure** : `PN_AAMMJJHHMMSS`, horodatage unique
-  - **Custom** : `PN_champ1_champ2_...`, jusqu'à 5 champs texte libres définis par l'utilisateur
-- Connexion réelle à l'imprimante via port série (RS-232)
-- Vérification de l'état de l'imprimante avant chaque impression (papier, ruban, tête, pause)
-- Aperçu visuel du Data Matrix dans l'interface
-- Masque ZPL externalisé, modifiable sans toucher au code
+## Features
 
-## Prérequis
+- Generation of unique codes encoded as Data Matrix on each label
+- Three code generation modes:
+  - **Sequential**: `PN_NUMBER_DATE_LINE_STATION`, incremental serial number
+  - **Date/Time**: `PN_YYMMDDHHMMSS`, unique timestamp
+  - **Custom**: `PN_field1_field2_...`, up to 5 free-text fields defined by the user
+- Real connection to the printer via serial port (RS-232)
+- Printer status check before each print (paper, ribbon, head, pause)
+- Visual preview of the Data Matrix in the interface
+- Externalized ZPL template, editable without touching the code
+
+## Requirements
 
 - Python 3.12
-- Une imprimante Zebra connectée via port série (RS-232), ex: modèle 105SL
+- A Zebra printer connected via serial port (RS-232), e.g. model 105SL
 
 ## Installation
 
-1. Cloner le dépôt :git clone https://github.com/amenallahmhadhbi-max/zebra.git
+1. Clone the repository:
+git clone https://github.com/amenallahmhadhbi-max/zebra.git
 cd zebra
 
-2. Créer et activer l'environnement virtuel :python -m venv venv
+
+2. Create and activate the virtual environment:
+python -m venv venv
 venv\Scripts\activate
 
 
-3. Installer les dépendances :pip install -r requirement.txt
-4. ## Configuration
+3. Install the dependencies:
+pip install -r requirement.txt
 
-Avant le premier lancement, configurer les paramètres de connexion imprimante dans `config/printer_config.ini` :
+
+## Configuration
+
+Before the first launch, configure the printer connection settings in `config/printer_config.ini`:
 
 ```ini
 [PrinterSettings]
@@ -43,30 +50,33 @@ stop_bits = 1
 flow_control = XONXOFF
 ```
 
-Ajuster `port` selon le port COM attribué par Windows (visible dans le Gestionnaire de périphériques).
+Adjust `port` according to the COM port assigned by Windows (visible in Device Manager).
 
-Le masque ZPL de l'étiquette peut être ajusté dans `templates/label_mask.txt`.
+The label's ZPL template can be adjusted in `templates/label_mask.txt`.
 
-## Lancement
+## Launch
 python app/main.py
 
-## Structure du projet
-zbra/
+
+## Project Structure
+zebra/
 ├── app/
-│ ├── main.py # Point d'entrée
-│ ├── ui.py # Interface graphique (Tkinter)
-│ ├── serial_number.py # Génération des codes (3 modes)
-│ ├── label_template.py # Construction du ZPL à partir du masque
-│ ├── printer.py # Communication avec l'imprimante (envoi + statut)
-│ └── datamatrix_preview.py # Génération de l'aperçu visuel du Data Matrix
+│ ├── main.py # Entry point
+│ ├── ui.py # Graphical interface (Tkinter)
+│ ├── serial_number.py # Code generation (3 modes)
+│ ├── label_template.py # ZPL construction from the template
+│ ├── printer.py # Printer communication (send + status)
+│ └── datamatrix_preview.py # Visual Data Matrix preview generation
 ├── templates/
-│ └── label_mask.txt # Masque ZPL de l'étiquette
+│ └── label_mask.txt # Label ZPL template
 ├── config/
-│ └── printer_config.ini # Paramètres de connexion imprimante
+│ └── printer_config.ini # Printer connection settings
 ├── assets/
 │ └── visteon_logo.png
 └── requirement.txt
 
-## Auteur
 
-Amenallah Mhadhbi — Stage Visteon Tunisie
+## Author
+
+Amenallah Mhadhbi — Visteon Tunisia Internship
+
