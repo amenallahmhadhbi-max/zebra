@@ -46,14 +46,43 @@ A `.spec` file is already included in the repo, so it's recommended to build fro
    \`\`\`bash
    pyinstaller ZebraLabelPrinter.spec
    \`\`\`
+Copy-Item -Recurse config dist/config -Force
 
+Copy-Item -Recurse templates dist/templates -Force
 3. The generated executable will be located at:
    \`\`\`
    dist/ZebraLabelPrinter.exe
    \`\`\`
 
 
+## Troubleshooting the executable
 
+### Missing DLL errors on the target machine
+
+If the `.exe` fails to start on another computer with an error like:
+
+\`\`\`
+The code execution cannot proceed because VCRUNTIME140.dll was not found
+\`\`\`
+
+This means the **Microsoft Visual C++ Redistributable** is not installed on that machine. This is common on older or industrial Windows PCs.
+
+**Fix:** Download and install it from Microsoft:
+👉 https://aka.ms/vs/17/release/vc_redist.x64.exe
+
+### pywin32 / DLL load failed errors
+
+If you see a `DLL load failed` or `pywintypesXX.dll` related error when running the built `.exe`, it usually means PyInstaller didn't bundle a required `pywin32` module. Rebuild with the hidden imports explicitly included:
+
+\`\`\`bash
+pyinstaller --hidden-import=win32timezone --hidden-import=win32com main.py
+\`\`\`
+
+Alternatively, add them directly to the `hiddenimports` list in `ZebraLabelPrinter.spec`.
+
+### Printer-specific DLLs
+
+If the app communicates with the Zebra printer through a vendor SDK or driver DLL, make sure those files are included in the `.spec` file's `datas` list so they get bundled into the executable. Missing printer DLLs will cause connection/communication failures even if the app itself launches correctly.
 ## Configuration
 
 Before the first launch, configure the printer connection settings in `config/printer_config.ini`:
