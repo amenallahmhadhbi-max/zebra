@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 from PIL import Image, ImageTk
+from paths import resource_path
 from serial_number import (
     generate_serial_number_sequential,
     generate_serial_number_datetime,
@@ -47,7 +48,7 @@ def main():
     )
     header_label.pack(side="left", padx=20, pady=15)
 
-    logo_img = Image.open("assets/visteon_logo.png")
+    logo_img = Image.open(resource_path("assets/visteon_logo.png"))
     logo_img = logo_img.resize((100, 45))
     logo_tk = ImageTk.PhotoImage(logo_img)
 

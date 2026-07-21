@@ -1,9 +1,10 @@
 import serial
 import time
 import configparser
+from paths import external_path
 
 config = configparser.ConfigParser()
-config.read("config/printer_config.ini")
+config.read(external_path("config/printer_config.ini"))
 
 SERIAL_PORT = config["PrinterSettings"]["port"]
 BAUD_RATE = int(config["PrinterSettings"]["baud_rate"])
@@ -12,7 +13,7 @@ PARITY = config["PrinterSettings"]["parity"]
 STOP_BITS = float(config["PrinterSettings"]["stop_bits"])
 FLOW_CONTROL = config["PrinterSettings"]["flow_control"]
 
-SIMULATION_MODE = False
+SIMULATION_MODE = True
 
 
 def send_to_printer(zpl_code: str) -> bool:

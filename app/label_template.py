@@ -1,7 +1,9 @@
+from paths import external_path
+
+
 def build_zpl_label(pn: str, serial_number: str) -> str:
 
-
-    with open("templates/label_mask.txt", "r") as f:
+    with open(external_path("templates/label_mask.txt"), "r") as f:
         mask = f.read()
 
     zpl = mask.replace("{PN}", pn).replace("{SN}", serial_number)

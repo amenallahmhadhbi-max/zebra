@@ -52,7 +52,7 @@ flow_control = XONXOFF
 
 Adjust `port` according to the COM port assigned by Windows (visible in Device Manager).
 
-The label's ZPL template can be adjusted in `templates/label_mask.txt`.
+The label's ZPL template can be adjusted in `templates/label_mask.txt`.*
 
 ## Launch
 python app/main.py
