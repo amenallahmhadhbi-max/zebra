@@ -1,3 +1,4 @@
 pylibdmtx
 pillow
 pyserial
+pyStrich[png]

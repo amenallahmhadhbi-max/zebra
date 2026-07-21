@@ -1,19 +1,10 @@
-from pylibdmtx.pylibdmtx import encode
-from PIL import Image
+from pystrich.datamatrix import DataMatrixEncoder
 
 
 def generate_datamatrix_image(data: str):
-    
-
-    encoded = encode(data.encode("utf-8"))
-
-    image = Image.frombytes(
-        "RGB",
-        (encoded.width, encoded.height),
-        encoded.pixels
-    )
-
-    return image
+    encoder = DataMatrixEncoder(data)
+    image = encoder.get_pilimage(cellsize=8)
+    return image.convert("RGB")
 
 
 if __name__ == "__main__":
