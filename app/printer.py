@@ -12,7 +12,7 @@ PARITY = config["PrinterSettings"]["parity"]
 STOP_BITS = float(config["PrinterSettings"]["stop_bits"])
 FLOW_CONTROL = config["PrinterSettings"]["flow_control"]
 
-SIMULATION_MODE = True
+SIMULATION_MODE = False
 
 
 def send_to_printer(zpl_code: str) -> bool:
