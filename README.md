@@ -35,6 +35,24 @@ venv\Scripts\activate
 3. Install the dependencies:
 pip install -r requirement.txt
 
+## Building the executable (.exe)
+
+This project uses PyInstaller to build a standalone Windows executable.
+A `.spec` file is already included in the repo, so it's recommended to build from it directly — this ensures consistent build settings (name, icon, included data files, etc.) every time.
+
+1. Make sure your venv is activated and dependencies are installed (see above).
+
+2. Build using the existing spec file:
+   \`\`\`bash
+   pyinstaller ZebraLabelPrinter.spec
+   \`\`\`
+
+3. The generated executable will be located at:
+   \`\`\`
+   dist/ZebraLabelPrinter.exe
+   \`\`\`
+
+
 
 ## Configuration
 
