@@ -2,7 +2,11 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 from PIL import Image, ImageTk
-from serial_number import generate_serial_number_sequential, generate_serial_number_datetime
+from serial_number import (
+    generate_serial_number_sequential,
+    generate_serial_number_datetime,
+    generate_serial_number_custom,
+)
 from label_template import build_zpl_label
 from printer import send_to_printer, get_printer_status, SERIAL_PORT, BAUD_RATE, DATA_BITS, PARITY, STOP_BITS, FLOW_CONTROL
 from datamatrix_preview import generate_datamatrix_image
@@ -18,11 +22,13 @@ FONT_TITLE = ("Segoe UI", 16, "bold")
 FONT_LABEL = ("Segoe UI", 10)
 FONT_ENTRY = ("Segoe UI", 10)
 
+MAX_CUSTOM_FIELDS = 5
+
 
 def main():
     root = tk.Tk()
     root.title("Zebra Label Printer - Visteon")
-    root.geometry("720x600")
+    root.geometry("720x680")
     root.configure(bg=COLOR_LIGHT_BG)
 
     # --- En-tête ---
@@ -65,31 +71,106 @@ def main():
     qty_entry = tk.Entry(top_frame, width=20, font=FONT_ENTRY)
     qty_entry.grid(row=2, column=1, padx=5, pady=5)
 
+    # --- Zone des champs custom (créés dynamiquement) ---
+    custom_frame = tk.Frame(top_frame, bg=COLOR_LIGHT_BG)
+    custom_entries = []
+
+    custom_counter_label = tk.Label(
+        custom_frame, text=f"Champs : 0/{MAX_CUSTOM_FIELDS}", bg=COLOR_LIGHT_BG, fg=COLOR_DARK, font=FONT_LABEL
+    )
+
+    def refresh_custom_layout():
+        for i, field_row in enumerate(custom_entries):
+            field_row["label"].config(text=f"Champ {i + 1}:")
+            field_row["label"].grid(row=i, column=0, padx=5, pady=3, sticky="e")
+            field_row["entry"].grid(row=i, column=1, padx=5, pady=3)
+            field_row["remove"].grid(row=i, column=2, padx=5, pady=3)
+
+        custom_counter_label.config(text=f"Champs : {len(custom_entries)}/{MAX_CUSTOM_FIELDS}")
+        custom_counter_label.grid(row=MAX_CUSTOM_FIELDS, column=0, columnspan=3, pady=5)
+
+        if len(custom_entries) >= MAX_CUSTOM_FIELDS:
+            add_field_button.config(state="disabled")
+        else:
+            add_field_button.config(state="normal")
+
+    def remove_custom_field(field_row):
+        field_row["label"].destroy()
+        field_row["entry"].destroy()
+        field_row["remove"].destroy()
+        custom_entries.remove(field_row)
+        refresh_custom_layout()
+
+    def add_custom_field():
+        if len(custom_entries) >= MAX_CUSTOM_FIELDS:
+            return
+
+        field_label = tk.Label(custom_frame, text="Champ:", bg=COLOR_LIGHT_BG, fg=COLOR_DARK, font=FONT_LABEL)
+        field_entry = tk.Entry(custom_frame, width=18, font=FONT_ENTRY)
+
+        field_row = {}
+
+        remove_button = tk.Button(
+            custom_frame, text="✕", font=FONT_LABEL,
+            bg=COLOR_LIGHT_BG, fg=COLOR_DARK, relief="flat",
+            cursor="hand2", command=lambda: remove_custom_field(field_row)
+        )
+
+        field_row["label"] = field_label
+        field_row["entry"] = field_entry
+        field_row["remove"] = remove_button
+
+        custom_entries.append(field_row)
+        refresh_custom_layout()
+
+    add_field_button = tk.Button(
+        custom_frame, text="+ Ajouter un champ", command=add_custom_field,
+        bg=COLOR_ORANGE, fg=COLOR_WHITE, font=FONT_LABEL,
+        relief="flat", activebackground=COLOR_DARK, activeforeground=COLOR_WHITE,
+        cursor="hand2"
+    )
+
     # --- Sélection du mode de génération ---
     mode_var = tk.StringVar(value="sequential")
 
     def on_mode_change():
-        if mode_var.get() == "sequential":
+        mode = mode_var.get()
+
+        sn_start_label.grid_remove()
+        sn_start_entry.grid_remove()
+        custom_frame.grid_remove()
+
+        if mode == "sequential":
             sn_start_label.grid(row=1, column=0, padx=5, pady=5, sticky="e")
             sn_start_entry.grid(row=1, column=1, padx=5, pady=5)
-        else:
-            sn_start_label.grid_remove()
-            sn_start_entry.grid_remove()
+        elif mode == "custom":
+            custom_frame.grid(row=1, column=0, columnspan=2, pady=5)
+            refresh_custom_layout()
+            add_field_button.grid(row=MAX_CUSTOM_FIELDS + 1, column=0, columnspan=3, pady=5)
 
     mode_frame = tk.Frame(top_frame, bg=COLOR_LIGHT_BG)
-    mode_frame.grid(row=4, column=0, columnspan=2, pady=4)
+    mode_frame.grid(row=3, column=0, columnspan=2, pady=4)
 
     tk.Radiobutton(
         mode_frame, text="Séquentiel", variable=mode_var, value="sequential",
         command=on_mode_change, bg=COLOR_LIGHT_BG, fg=COLOR_DARK,
         font=FONT_LABEL, selectcolor=COLOR_WHITE, activebackground=COLOR_LIGHT_BG
-    ).pack(side="left", padx=10)
+    ).pack(side="left", padx=8)
 
     tk.Radiobutton(
         mode_frame, text="Date/Heure", variable=mode_var, value="datetime",
         command=on_mode_change, bg=COLOR_LIGHT_BG, fg=COLOR_DARK,
         font=FONT_LABEL, selectcolor=COLOR_WHITE, activebackground=COLOR_LIGHT_BG
-    ).pack(side="left", padx=10)
+    ).pack(side="left", padx=8)
+
+    tk.Radiobutton(
+        mode_frame, text="Custom", variable=mode_var, value="custom",
+        command=on_mode_change, bg=COLOR_LIGHT_BG, fg=COLOR_DARK,
+        font=FONT_LABEL, selectcolor=COLOR_WHITE, activebackground=COLOR_LIGHT_BG
+    ).pack(side="left", padx=8)
+
+    custom_frame.grid(row=4, column=0, columnspan=2, pady=5)
+    custom_frame.grid_remove()
 
     # --- Zone du bas : Vue basculable (gauche) + Liste des codes (droite) ---
     bottom_frame = tk.Frame(root, bg=COLOR_LIGHT_BG)
@@ -189,14 +270,13 @@ def main():
         print_button.config(state="normal")
 
     # --- La boucle d'impression, exécutée dans un thread séparé ---
-    def print_loop(mode, pn, sn_start, qty):
+    def print_loop(mode, pn, sn_start, qty, custom_values):
         for i in range(qty):
             status = get_printer_status()
 
             if status is None:
                 root.after(0, show_error, "Impossible de contacter l'imprimante.")
                 return
-
             if status.get("paper_out"):
                 root.after(0, show_error, "Plus de papier dans l'imprimante !")
                 return
@@ -212,8 +292,10 @@ def main():
 
             if mode == "sequential":
                 code = generate_serial_number_sequential(pn, sn_start, i)
-            else:
+            elif mode == "datetime":
                 code = generate_serial_number_datetime(pn)
+            else:
+                code = generate_serial_number_custom(pn, custom_values)
 
             zpl_code = build_zpl_label(pn, code)
             success = send_to_printer(zpl_code)
@@ -243,6 +325,7 @@ def main():
 
         qty = int(qty_text)
         sn_start = 0
+        custom_values = []
 
         if mode == "sequential":
             sn_start_text = sn_start_entry.get().strip()
@@ -251,8 +334,14 @@ def main():
                 return
             sn_start = int(sn_start_text)
 
+        elif mode == "custom":
+            if len(custom_entries) == 0:
+                messagebox.showerror("Erreur", "Ajoute au moins un champ pour le mode Custom.")
+                return
+            custom_values = [f["entry"].get().strip() for f in custom_entries]
+
         print_button.config(state="disabled")
-        thread = threading.Thread(target=print_loop, args=(mode, pn, sn_start, qty))
+        thread = threading.Thread(target=print_loop, args=(mode, pn, sn_start, qty, custom_values))
         thread.start()
 
     # --- Bouton Imprimer ---

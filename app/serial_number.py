@@ -29,7 +29,18 @@ def generate_serial_number_datetime(pn: str) -> str:
     return f"{pn}_{formatted_date}"
 
 
+def generate_serial_number_custom(pn: str, extra_fields: list) -> str:
+    """
+    Mode Custom :
+    partnumber_champ1_champ2_...
+    - extra_fields : liste de textes libres saisis par l'utilisateur (0 à 5 éléments)
+    """
+    parts = [pn] + [f for f in extra_fields if f.strip()]
+    return "_".join(parts)
+
+
 if __name__ == "__main__":
     test_pn = "PN12345"
     print(generate_serial_number_sequential(test_pn, sn_start=100, index=0))
     print(generate_serial_number_datetime(test_pn))
+    print(generate_serial_number_custom(test_pn, ["LOT42", "ligneA"]))
