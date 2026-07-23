@@ -30,8 +30,9 @@ cd zebra
 2. Create and activate the virtual environment:
 
 python -m venv venv
-venv\Scripts\activate
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+venv\Scripts\activate
+
 
 
    > `Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process` is needed on Windows/PowerShell if activating the venv fails with a "running scripts is disabled on this system" error. It only changes the policy for the current terminal session, not system-wide.
@@ -65,18 +66,14 @@ A `.spec` file is already included in the repo, so it's recommended to build fro
 Remove-Item -Recurse -Force dist
 
 
-3. Build using the existing spec file:
+3. Build using the existing spec file and Copy the required data folders into the build output (the spec file's `datas` may already include these, but re-copy manually if needed after a clean rebuild):
 
 pyinstaller ZebraLabelPrinter.spec
-
-
-4. Copy the required data folders into the build output (the spec file's `datas` may already include these, but re-copy manually if needed after a clean rebuild):
-
 Copy-Item -Recurse config dist/config -Force
 Copy-Item -Recurse templates dist/templates -Force
 
 
-5. The generated executable will be located at:
+4. The generated executable will be located at:
 
 dist/ZebraLabelPrinter.exe
 
