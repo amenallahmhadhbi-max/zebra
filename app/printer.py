@@ -16,14 +16,14 @@ FLOW_CONTROL = config["PrinterSettings"]["flow_control"]
 SIMULATION_MODE = False
 
 
-def send_to_printer(zpl_code: str) -> bool:
+def send_to_printer(zpl_code: str):
     if SIMULATION_MODE:
         return _send_simulated(zpl_code)
     else:
         return _send_real(zpl_code)
 
 
-def _send_simulated(zpl_code: str) -> bool:
+def _send_simulated(zpl_code: str):
     try:
         print("=" * 40)
         print("SIMULATION - Envoi à l'imprimante :")
@@ -32,13 +32,13 @@ def _send_simulated(zpl_code: str) -> bool:
         time.sleep(1)
         print("=" * 40)
         print("Impression simulée avec succès.")
-        return True
+        return True, None
     except Exception as e:
         print(f"Erreur lors de l'envoi (simulé) : {e}")
-        return False
+        return False, str(e)
 
 
-def _send_real(zpl_code: str) -> bool:
+def _send_real(zpl_code: str):
     try:
         ser = serial.Serial(
             port=SERIAL_PORT,
@@ -53,15 +53,15 @@ def _send_real(zpl_code: str) -> bool:
         ser.flush()
         ser.close()
         print("Impression envoyée avec succès (mode réel).")
-        return True
+        return True, None
     except Exception as e:
         print(f"Erreur lors de l'envoi réel à l'imprimante : {e}")
-        return False
+        return False, str(e)
 
 
 def get_printer_status(timeout=2):
     if SIMULATION_MODE:
-        return {"paper_out": False, "ribbon_out": False, "head_open": False}
+        return {"paper_out": False, "ribbon_out": False, "head_open": False, "paused": False}
     try:
         ser = serial.Serial(
             port=SERIAL_PORT,
@@ -110,8 +110,8 @@ if __name__ == "__main__":
 ^FDTest impression^FS
 ^XZ"""
 
-    success = send_to_printer(test_zpl)
-    print(f"\nRésultat de l'envoi : {success}")
+    success, error = send_to_printer(test_zpl)
+    print(f"\nRésultat de l'envoi : {success} (erreur: {error})")
 
     status = get_printer_status()
     print(f"\nStatut brut reçu : {status}")

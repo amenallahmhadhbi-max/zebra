@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 import threading
 from PIL import Image, ImageTk
 from paths import resource_path
@@ -25,11 +25,21 @@ FONT_ENTRY = ("Segoe UI", 10)
 
 MAX_CUSTOM_FIELDS = 5
 
+# --- Available separators (label shown to user -> actual character used) ---
+SEPARATOR_OPTIONS = {
+    "_ (underscore)": "_",
+    "- (tiret)": "-",
+    ". (point)": ".",
+    "/ (slash)": "/",
+    "| (pipe)": "|",
+    "espace": " ",
+}
+
 
 def main():
     root = tk.Tk()
     root.title("Zebra Label Printer - Visteon")
-    root.geometry("760x720")
+    root.geometry("760x760")
     root.configure(bg=COLOR_LIGHT_BG)
 
     # --- Validation helper for numeric-only entries (used by "Sequence" fields) ---
@@ -43,7 +53,7 @@ def main():
     header.pack(fill="x")
 
     header_label = tk.Label(
-        header, text="Visteon — Zebra Label Printer",
+        header, text="Visteon — Zebra Label Printer V1.0 July 2026",
         bg=COLOR_MEDIUM_GRAY, fg=COLOR_WHITE, font=FONT_TITLE
     )
     header_label.pack(side="left", padx=20, pady=15)
@@ -77,6 +87,32 @@ def main():
 
     qty_entry = tk.Entry(top_frame, width=20, font=FONT_ENTRY)
     qty_entry.grid(row=2, column=1, padx=5, pady=5)
+
+    # --- Separator selection (used to join fields in every mode) ---
+    separator_label = tk.Label(top_frame, text="Separator:", bg=COLOR_LIGHT_BG, fg=COLOR_DARK, font=FONT_LABEL)
+    separator_label.grid(row=3, column=0, padx=5, pady=5, sticky="e")
+
+    separator_var = tk.StringVar(value="_")
+    separator_combo = ttk.Combobox(
+        top_frame, textvariable=separator_var, width=17, font=FONT_ENTRY,
+        values=list(SEPARATOR_OPTIONS.values())  # state left as "normal" -> free typing allowed
+    )
+    separator_combo.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+
+    def get_separator():
+        """Return the separator character currently entered/selected (any character allowed)."""
+        return separator_var.get()
+
+    # --- Debug mode toggle ---
+    # Unchecked (default) = Prod mode: labels are sent directly, no printer status check.
+    # Checked = Debug mode: printer status is polled before each label (paper/ribbon/head/pause).
+    debug_mode_var = tk.IntVar(value=0)
+    debug_mode_checkbox = tk.Checkbutton(
+        top_frame, text="Debug mode", variable=debug_mode_var,
+        bg=COLOR_LIGHT_BG, fg=COLOR_DARK, font=FONT_LABEL,
+        activebackground=COLOR_LIGHT_BG, selectcolor=COLOR_WHITE
+    )
+    debug_mode_checkbox.grid(row=3, column=2, padx=10, pady=5, sticky="w")
 
     # --- Custom fields zone (built dynamically) ---
     custom_frame = tk.Frame(top_frame, bg=COLOR_LIGHT_BG)
@@ -223,7 +259,7 @@ def main():
             add_field_button.grid(row=MAX_CUSTOM_FIELDS + 1, column=0, columnspan=2, pady=5)
 
     mode_frame = tk.Frame(top_frame, bg=COLOR_LIGHT_BG)
-    mode_frame.grid(row=3, column=0, columnspan=2, pady=4)
+    mode_frame.grid(row=4, column=0, columnspan=2, pady=4)
 
     tk.Radiobutton(
         mode_frame, text="Sequential", variable=mode_var, value="sequential",
@@ -243,7 +279,7 @@ def main():
         font=FONT_LABEL, selectcolor=COLOR_WHITE, activebackground=COLOR_LIGHT_BG
     ).pack(side="left", padx=8)
 
-    custom_frame.grid(row=4, column=0, columnspan=2, pady=5)
+    custom_frame.grid(row=5, column=0, columnspan=2, pady=5)
     custom_frame.grid_remove()
 
     # --- Bottom zone: toggleable view (left) + Printed codes list (right) ---
@@ -344,41 +380,45 @@ def main():
         print_button.config(state="normal")
 
     # --- Print loop, run in a separate thread ---
-    def print_loop(mode, pn, sn_start, qty, fields_config):
+    # Prod mode (debug_mode=False): labels are sent directly, no status check.
+    # Debug mode (debug_mode=True): printer status is polled before each label.
+    def print_loop(mode, pn, sn_start, qty, fields_config, separator, debug_mode):
         for i in range(qty):
-            status = get_printer_status()
+            if debug_mode:
+                status = get_printer_status()
 
-            if status is None:
-                root.after(0, show_error, "Unable to reach the printer.")
-                return
-            if status.get("paper_out"):
-                root.after(0, show_error, "Printer is out of paper!")
-                return
-            if status.get("ribbon_out"):
-                root.after(0, show_error, "Printer is out of ribbon!")
-                return
-            if status.get("head_open"):
-                root.after(0, show_error, "Print head is open!")
-                return
-            if status.get("paused"):
-                root.after(0, show_error, "Printer is paused.")
-                return
+                if status is None:
+                    root.after(0, show_error, "Unable to reach the printer.")
+                    return
+                if status.get("paper_out"):
+                    root.after(0, show_error, "Printer is out of paper!")
+                    return
+                if status.get("ribbon_out"):
+                    root.after(0, show_error, "Printer is out of ribbon!")
+                    return
+                if status.get("head_open"):
+                    root.after(0, show_error, "Print head is open!")
+                    return
+                if status.get("paused"):
+                    root.after(0, show_error, "Printer is paused.")
+                    return
 
             if mode == "sequential":
-                code = generate_serial_number_sequential(pn, sn_start, i)
+                code = generate_serial_number_sequential(pn, sn_start, i, separator=separator)
             elif mode == "datetime":
-                code = generate_serial_number_datetime(pn)
+                code = generate_serial_number_datetime(pn, separator=separator)
             else:
-                code = generate_serial_number_custom(fields_config, i)
+                code = generate_serial_number_custom(fields_config, i, separator=separator)
 
             zpl_code = build_zpl_label(pn, code)
-            success = send_to_printer(zpl_code)
+            success, error_message = send_to_printer(zpl_code)
 
             if success:
                 root.after(0, update_ui_after_print, code)
                 print(f"Label {i + 1}/{qty} printed. Code: {code}")
             else:
-                root.after(0, show_error, f"Failed to print label {i + 1}/{qty}.")
+                detail = f"\n\nDetails: {error_message}" if error_message else ""
+                root.after(0, show_error, f"Failed to print label {i + 1}/{qty}.{detail}")
                 return
 
         root.after(0, lambda: print_button.config(state="normal"))
@@ -396,6 +436,7 @@ def main():
         pn = ""
         sn_start = 0
         fields_config = []
+        separator = get_separator()
 
         if mode == "sequential":
             pn = pn_entry.get().strip()
@@ -441,8 +482,10 @@ def main():
 
                 fields_config.append(field_data)
 
+        debug_mode = debug_mode_var.get() == 1
+
         print_button.config(state="disabled")
-        thread = threading.Thread(target=print_loop, args=(mode, pn, sn_start, qty, fields_config))
+        thread = threading.Thread(target=print_loop, args=(mode, pn, sn_start, qty, fields_config, separator, debug_mode))
         thread.start()
 
     # --- Print button ---
@@ -452,7 +495,7 @@ def main():
         relief="flat", activebackground=COLOR_DARK, activeforeground=COLOR_WHITE,
         padx=20, pady=8, cursor="hand2"
     )
-    print_button.grid(row=5, column=0, columnspan=2, pady=8)
+    print_button.grid(row=6, column=0, columnspan=2, pady=8)
 
     on_mode_change()
 

@@ -1,38 +1,34 @@
 from datetime import datetime
 
 
-def generate_serial_number_sequential(pn: str, sn_start: int, index: int) -> str:
+def generate_serial_number_sequential(pn: str, sn_start: int, index: int, separator: str = "_") -> str:
     """
     Sequential mode:
-    partnumber_serialnumber_date_1_02
+    partnumber<sep>serialnumber<sep>date<sep>1<sep>02
     """
     sn_value = sn_start + index
     sn_formatted = f"{sn_value:06d}"
 
-    now = datetime.now()
-    formatted_date = now.strftime('%y%m%d')
+    
 
-    LINE = "1"
-    STATION = "02"
-
-    return f"{pn}_{sn_formatted}_{formatted_date}_{LINE}_{STATION}"
+    return separator.join([pn, sn_formatted])
 
 
-def generate_serial_number_datetime(pn: str) -> str:
+def generate_serial_number_datetime(pn: str, separator: str = "_") -> str:
     """
     Date/Time mode:
-    partnumber_YYMMDDHHMMSS
+    partnumber<sep>YYMMDDHHMMSS
     """
     now = datetime.now()
     formatted_date = now.strftime('%y%m%d%H%M%S')
 
-    return f"{pn}_{formatted_date}"
+    return separator.join([pn, formatted_date])
 
 
-def generate_serial_number_custom(fields_config: list, index: int) -> str:
+def generate_serial_number_custom(fields_config: list, index: int, separator: str = "_") -> str:
     """
     Custom mode:
-    field1_field2_...
+    field1<sep>field2<sep>...
 
     fields_config: list of dicts, each like:
         {"value": str, "sequential": bool, "seq_type": "datetime"|"sequence", "start": int}
@@ -52,18 +48,18 @@ def generate_serial_number_custom(fields_config: list, index: int) -> str:
             if text:
                 parts.append(text)
 
-    return "_".join(parts)
+    return separator.join(parts)
 
 
 if __name__ == "__main__":
     test_pn = "PN12345"
-    print(generate_serial_number_sequential(test_pn, sn_start=100, index=0))
-    print(generate_serial_number_datetime(test_pn))
+    print(generate_serial_number_sequential(test_pn, sn_start=100, index=0, separator="-"))
+    print(generate_serial_number_datetime(test_pn, separator="-"))
 
     test_fields = [
         {"value": "PN12345", "sequential": False},
         {"value": "", "sequential": True, "seq_type": "sequence", "start": 0},
         {"value": "LOT42", "sequential": False},
     ]
-    print(generate_serial_number_custom(test_fields, index=0))
-    print(generate_serial_number_custom(test_fields, index=1))
+    print(generate_serial_number_custom(test_fields, index=0, separator="-"))
+    print(generate_serial_number_custom(test_fields, index=1, separator="-"))
